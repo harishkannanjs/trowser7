@@ -1,5 +1,4 @@
 
-```typescriptreact
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -9,6 +8,7 @@ interface FeaturesSectionProps {}
 
 const Features: React.FC<FeaturesSectionProps> = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [visibleSections, setVisibleSections] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrolling = useRef(false);
 
@@ -69,13 +69,38 @@ const Features: React.FC<FeaturesSectionProps> = () => {
 
         const rect = containerRef.current.getBoundingClientRect();
         const containerTop = rect.top;
-        const containerHeight = rect.height;
         const viewportHeight = window.innerHeight;
 
-        // Calculate scroll progress through the container
-        if (containerTop <= 0 && containerTop > -containerHeight) {
-          const progress = Math.min(Math.max(-containerTop / (containerHeight - viewportHeight), 0), 1);
-          setScrollProgress(progress);
+        // Calculate scroll progress when container is sticky (top = 0)
+        if (containerTop <= 0) {
+          // Get the parent section to calculate total scroll distance
+          const section = containerRef.current.closest('section');
+          if (section) {
+            const sectionRect = section.getBoundingClientRect();
+            const sectionTop = sectionRect.top;
+            const totalScrollDistance = (sectionsData.length - 1) * viewportHeight;
+            
+            // Calculate progress based on how much we've scrolled into the section
+            const scrolledIntoSection = Math.abs(sectionTop);
+            const progress = Math.min(Math.max(scrolledIntoSection / totalScrollDistance, 0), 1);
+            
+            setScrollProgress(progress);
+
+            // Calculate which sections should be visible based on scroll progress
+            const totalSections = sectionsData.length;
+            const sectionsToShow = Math.floor(progress * totalSections);
+            const newVisibleSections: number[] = [];
+            
+            for (let i = 0; i <= Math.min(sectionsToShow, totalSections - 1); i++) {
+              newVisibleSections.push(i);
+            }
+            
+            setVisibleSections(newVisibleSections);
+          }
+        } else {
+          // Reset when not in sticky mode
+          setScrollProgress(0);
+          setVisibleSections([]);
         }
       });
     };
@@ -86,55 +111,40 @@ const Features: React.FC<FeaturesSectionProps> = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [sectionsData.length]);
 
   const renderSection = (section: typeof sectionsData[0], index: number) => {
-    // Calculate which section should be visible based on scroll progress
-    const sectionProgress = scrollProgress * (sectionsData.length - 1);
-    const sectionIndex = Math.floor(sectionProgress);
-    const sectionLocalProgress = sectionProgress - sectionIndex;
-
-    // Determine visibility and transform for this section
-    let opacity = 0;
-    let translateY = 100;
-    let zIndex = 1;
-
-    if (index === 0) {
-      // Privacy section (always visible as base)
-      opacity = 1;
-      translateY = 0;
-      zIndex = 1;
-    } else if (index === sectionIndex + 1) {
-      // Currently animating in section
-      opacity = sectionLocalProgress;
-      translateY = (1 - sectionLocalProgress) * 100;
-      zIndex = 10 + index;
-    } else if (index <= sectionIndex) {
-      // Fully visible section
-      opacity = 1;
-      translateY = 0;
-      zIndex = 10 + index;
-    }
+    const isVisible = visibleSections.includes(index);
+    const sectionProgress = Math.max(0, (scrollProgress * sectionsData.length * 1.2) - index);
+    const animationProgress = Math.min(sectionProgress, 1);
+    
+    // Calculate animation values
+    const opacity = isVisible ? animationProgress : 0;
+    const translateY = isVisible ? (1 - animationProgress) * 60 : 60;
+    const scale = isVisible ? 0.9 + (animationProgress * 0.1) : 0.9;
+    
+    // Stagger delay for smooth sequential animation
+    const delay = index * 200; // 200ms delay between sections
 
     return (
       <div
         key={section.id}
         className="feature-section-overlay"
         style={{
-          position: index === 0 ? 'relative' : 'absolute',
-          top: index === 0 ? 'auto' : 0,
-          left: index === 0 ? 'auto' : 0,
+          position: 'absolute',
+          top: 0,
+          left: 0,
           width: '100%',
           height: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontFamily: '"SF Pro Rounded Semibold", "SF Pro Rounded Semibold Placeholder", "-apple-system", "BlinkMacSystemFont", sans-serif',
-          background: 'transparent',
+          background: 'rgb(0, 0, 0)',
           opacity,
-          transform: 'translateY(' + translateY + '%)',
-          zIndex,
-          transition: 'none',
+          transform: `translateY(${translateY}px) scale(${scale})`,
+          zIndex: 10 + index,
+          transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
           willChange: 'transform, opacity',
         }}
       >
@@ -159,11 +169,12 @@ const Features: React.FC<FeaturesSectionProps> = () => {
               height: '60%',
               borderRadius: '50%',
               filter: 'blur(100px)',
-              opacity: 0.3,
+              opacity: 0.3 * animationProgress,
               right: section.contentPosition === 'left' ? '-10%' : 'auto',
               left: section.contentPosition === 'right' ? '-10%' : 'auto',
               top: '5%',
               zIndex: 1,
+              transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
             }}
           ></div>
           <div
@@ -175,11 +186,12 @@ const Features: React.FC<FeaturesSectionProps> = () => {
               height: '70%',
               borderRadius: '50%',
               filter: 'blur(120px)',
-              opacity: 0.3,
+              opacity: 0.3 * animationProgress,
               left: section.contentPosition === 'left' ? '-15%' : 'auto',
               right: section.contentPosition === 'right' ? '-15%' : 'auto',
               bottom: '10%',
               zIndex: 1,
+              transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
             }}
           ></div>
 
@@ -202,7 +214,13 @@ const Features: React.FC<FeaturesSectionProps> = () => {
               zIndex: 2,
             }}
           >
-            <div style={{ opacity: 0.4 }}>
+            <div 
+              style={{ 
+                opacity: 0.4 * animationProgress,
+                transform: `scale(${0.8 + (animationProgress * 0.2)})`,
+                transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
+              }}
+            >
               {section.largeIcon}
             </div>
           </div>
@@ -234,6 +252,8 @@ const Features: React.FC<FeaturesSectionProps> = () => {
               maxWidth: '600px',
               marginLeft: section.contentPosition === 'right' ? 'auto' : '0',
               marginRight: section.contentPosition === 'left' ? 'auto' : '0',
+              transform: `translateX(${isVisible ? 0 : (section.contentPosition === 'left' ? -40 : 40)}px)`,
+              transition: `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 100}ms`,
             }}
           >
             {/* Small Icon */}
@@ -245,9 +265,10 @@ const Features: React.FC<FeaturesSectionProps> = () => {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 flexShrink: 0,
-                opacity: 1,
-                transform: 'none',
+                opacity: animationProgress,
+                transform: `translateY(${(1 - animationProgress) * 20}px)`,
                 marginBottom: '1.5rem',
+                transition: `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
               }}
             >
               <div className="p-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 inline-flex">
@@ -264,8 +285,9 @@ const Features: React.FC<FeaturesSectionProps> = () => {
                   flexDirection: 'column',
                   justifyContent: 'flex-start',
                   flexShrink: 0,
-                  opacity: 1,
-                  transform: 'none',
+                  opacity: animationProgress,
+                  transform: `translateY(${(1 - animationProgress) * 30}px)`,
+                  transition: `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
                 }}
               >
                 <h2
@@ -285,6 +307,9 @@ const Features: React.FC<FeaturesSectionProps> = () => {
                   className="text-sm md:text-base text-gray-300 leading-relaxed max-w-md"
                   style={{
                     textAlign: section.contentPosition === 'left' ? 'left' : 'right',
+                    opacity: animationProgress,
+                    transform: `translateY(${(1 - animationProgress) * 20}px)`,
+                    transition: `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
                   }}
                 >
                   {section.description}
@@ -298,34 +323,32 @@ const Features: React.FC<FeaturesSectionProps> = () => {
   };
 
   return (
-    <section id="features" className="mt-20 mb-12 md:mt-20 md:mb-16">
-      {/* Features Title */}
-      <div className="text-center mb-12 md:mb-16 relative z-50">
-        <h1 className="md:text-6xl text-3xl font-sans font-semibold tracking-tight text-white mb-4">
-          Features
-        </h1>
-      </div>
-
-      {/* Features Container with Overlay Animation */}
-      const containerHeight = sectionsData.length * 100 + 'vh';
-
-...
-
-<div
-  ref={containerRef}
-  className="features-sections-container"
-  style={{
-    position: 'relative',
-    height: containerHeight,
-    overflow: 'hidden',
-  }}
->
+    <section id="features" className="relative">
+      {/* Features Container with Sticky Behavior */}
+      <div
+        ref={containerRef}
+        className="features-sections-container"
+        style={{
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Features Title */}
+        <div className="absolute top-15 left-0 right-0 text-center z-50">
+          <h1 className="md:text-6xl text-3xl font-sans font-semibold tracking-tight text-white mb-4">
+            Features
+          </h1>
+        </div>
 
         {sectionsData.map((section, index) => renderSection(section, index))}
       </div>
+      
+      {/* Spacer to create scroll distance for all sections */}
+      <div style={{ height: `${(sectionsData.length - 1) * 100}vh` }} />
     </section>
   );
 };
 
 export default Features;
-```
