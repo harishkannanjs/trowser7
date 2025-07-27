@@ -254,9 +254,7 @@ const Features = () => {
                 height: isMobile ? '128px' : '384px',
               }}
             >
-              {React.cloneElement(section.largeIcon as React.ReactElement, {
-                className: "w-full h-full"
-              })}
+              {section.largeIcon}
             </div>
           </div>
         </div>
