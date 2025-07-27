@@ -30,9 +30,7 @@ const useWindowSize = () => {
   return windowSize;
 };
 
-interface FeaturesSectionProps {}
-
-const Features: React.FC<FeaturesSectionProps> = () => {
+const Features: React.FC = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [visibleSections, setVisibleSections] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
