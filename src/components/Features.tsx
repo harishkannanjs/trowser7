@@ -52,7 +52,7 @@ const Features = () => {
       description: 'Auto-destroy ads/trackers, encrypted DNS, and zero data logging. You are digitally invisible with always-on zero-trace mode and automatic tracker blocking.',
       largeIcon: <Shield className="w-96 h-96 md:w-[600px] md:h-[600px] text-white" />,
       contentPosition: 'left',
-      titleGradient: gradientPrimary,
+      titleGradient: gradientSecondary,
       largeSymbolGradient: 'linear-gradient(315deg, rgba(140, 140, 217, 0.3) 5%, rgba(235, 71, 96, 0.3) 95%)',
     },
     {
@@ -72,7 +72,7 @@ const Features = () => {
       description: 'Designed to disappear, so you can focus on what matters. No bloated menus, no distractions, just pure focus and intelligent performance that stays out of your way.',
       largeIcon: <Palette className="w-96 h-96 md:w-[600px] md:h-[600px] text-white" />,
       contentPosition: 'left',
-      titleGradient: gradientPrimary,
+      titleGradient: gradientSecondary,
       largeSymbolGradient: 'linear-gradient(315deg, rgba(140, 140, 217, 0.3) 5%, rgba(235, 71, 96, 0.3) 95%)',
     },
     {
