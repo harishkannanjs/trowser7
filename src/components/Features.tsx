@@ -4,6 +4,32 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Shield, Brain, Palette, Zap } from 'lucide-react';
 
+// Custom hook for window dimensions
+const useWindowSize = () => {
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+    height: typeof window !== 'undefined' ? window.innerHeight : 768,
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Call once to set initial size
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return windowSize;
+};
+
 interface FeaturesSectionProps {}
 
 const Features: React.FC<FeaturesSectionProps> = () => {
@@ -11,6 +37,8 @@ const Features: React.FC<FeaturesSectionProps> = () => {
   const [visibleSections, setVisibleSections] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrolling = useRef(false);
+  const { width: windowWidth } = useWindowSize();
+  const isMobile = windowWidth < 768;
 
   // Common gradient values
   const gradientPrimary = 'linear-gradient(315deg, rgb(140, 140, 217) 5%, rgb(235, 71, 96) 95%)';
@@ -208,20 +236,34 @@ const Features: React.FC<FeaturesSectionProps> = () => {
               position: 'absolute',
               width: '100%',
               height: '100%',
-              alignItems: section.contentPosition === 'left' ? 'flex-end' : 'flex-start',
-              paddingRight: section.contentPosition === 'left' ? '5%' : '0',
-              paddingLeft: section.contentPosition === 'right' ? '5%' : '0',
+              alignItems: isMobile 
+                ? (section.contentPosition === 'left' ? 'flex-start' : 'flex-end')
+                : (section.contentPosition === 'left' ? 'flex-end' : 'flex-start'),
+              paddingRight: isMobile 
+                ? (section.contentPosition === 'left' ? '0' : '5%')
+                : (section.contentPosition === 'left' ? '5%' : '0'),
+              paddingLeft: isMobile 
+                ? (section.contentPosition === 'left' ? '5%' : '0')
+                : (section.contentPosition === 'right' ? '5%' : '0'),
               zIndex: 2,
             }}
           >
             <div 
+              className="w-32 h-32 md:w-96 md:h-96 lg:w-[600px] lg:h-[600px]"
               style={{ 
                 opacity: 0.4 * animationProgress,
                 transform: `scale(${0.8 + (animationProgress * 0.2)})`,
                 transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              {section.largeIcon}
+              <div className="w-full h-full flex items-center justify-center text-white">
+                {React.cloneElement(section.largeIcon as React.ReactElement, {
+                  className: "w-full h-full"
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -233,7 +275,9 @@ const Features: React.FC<FeaturesSectionProps> = () => {
             position: 'relative',
             zIndex: 10,
             display: 'flex',
-            justifyContent: section.contentPosition === 'left' ? 'flex-start' : 'flex-end',
+            justifyContent: isMobile 
+              ? (section.contentPosition === 'left' ? 'flex-end' : 'flex-start')
+              : (section.contentPosition === 'left' ? 'flex-start' : 'flex-end'),
             alignItems: 'center',
             width: '100%',
             height: '100%',
@@ -246,14 +290,23 @@ const Features: React.FC<FeaturesSectionProps> = () => {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              alignItems: section.contentPosition === 'left' ? 'flex-start' : 'flex-end',
-              textAlign: section.contentPosition === 'left' ? 'left' : 'right',
-              width: '50%',
+              alignItems: isMobile 
+                ? (section.contentPosition === 'left' ? 'flex-end' : 'flex-start')
+                : (section.contentPosition === 'left' ? 'flex-start' : 'flex-end'),
+              textAlign: isMobile 
+                ? (section.contentPosition === 'left' ? 'right' : 'left')
+                : (section.contentPosition === 'left' ? 'left' : 'right'),
+              width: isMobile ? '60%' : '50%',
               maxWidth: '600px',
-              marginLeft: section.contentPosition === 'right' ? 'auto' : '0',
-              marginRight: section.contentPosition === 'left' ? 'auto' : '0',
-              transform: `translateX(${isVisible ? 0 : (section.contentPosition === 'left' ? -40 : 40)}px)`,
+              marginLeft: isMobile 
+                ? (section.contentPosition === 'left' ? 'auto' : '0')
+                : (section.contentPosition === 'right' ? 'auto' : '0'),
+              marginRight: isMobile 
+                ? (section.contentPosition === 'left' ? '0' : 'auto')
+                : (section.contentPosition === 'left' ? 'auto' : '0'),
+              transform: `translateY(${isVisible ? 0 : 40}px)`,
               transition: `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 100}ms`,
+              zIndex: 20,
             }}
           >
             {/* Small Icon */}
@@ -291,9 +344,11 @@ const Features: React.FC<FeaturesSectionProps> = () => {
                 }}
               >
                 <h2
-                  className="text-2xl md:text-4xl font-semibold text-white mb-4"
+                  className="text-xl md:text-2xl lg:text-4xl font-semibold text-white mb-4"
                   style={{
-                    textAlign: section.contentPosition === 'left' ? 'left' : 'right',
+                    textAlign: isMobile 
+                      ? (section.contentPosition === 'left' ? 'right' : 'left')
+                      : (section.contentPosition === 'left' ? 'left' : 'right'),
                     margin: '0 0 1rem 0',
                     background: section.titleGradient,
                     WebkitBackgroundClip: 'text',
@@ -306,7 +361,9 @@ const Features: React.FC<FeaturesSectionProps> = () => {
                 <p
                   className="text-sm md:text-base text-gray-300 leading-relaxed max-w-md"
                   style={{
-                    textAlign: section.contentPosition === 'left' ? 'left' : 'right',
+                    textAlign: isMobile 
+                      ? (section.contentPosition === 'left' ? 'right' : 'left')
+                      : (section.contentPosition === 'left' ? 'left' : 'right'),
                     opacity: animationProgress,
                     transform: `translateY(${(1 - animationProgress) * 20}px)`,
                     transition: `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
