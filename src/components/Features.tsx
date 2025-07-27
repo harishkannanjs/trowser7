@@ -1,17 +1,17 @@
-
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Shield, Brain, Palette, Zap } from 'lucide-react';
 
-// Custom hook for window dimensions
+// Improved window size hook with better SSR handling
 const useWindowSize = () => {
   const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-    height: typeof window !== 'undefined' ? window.innerHeight : 768,
+    width: 1024, // Default values
+    height: 768,
   });
 
   useEffect(() => {
+    // Only run on client side
     if (typeof window === 'undefined') return;
 
     const handleResize = () => {
@@ -21,16 +21,17 @@ const useWindowSize = () => {
       });
     };
 
+    // Set initial size
+    handleResize();
+    
     window.addEventListener('resize', handleResize);
-    handleResize(); // Call once to set initial size
-
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return windowSize;
 };
 
-const Features: React.FC = () => {
+const Features = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [visibleSections, setVisibleSections] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,7 +43,7 @@ const Features: React.FC = () => {
   const gradientPrimary = 'linear-gradient(315deg, rgb(140, 140, 217) 5%, rgb(235, 71, 96) 95%)';
   const gradientSecondary = 'radial-gradient(100% 100% at 0% 0%, rgb(255, 255, 255) 0%, rgb(235, 235, 244) 100%)';
 
-  // Data for each section using existing Features content
+  // Data for each section
   const sectionsData = [
     {
       id: 'privacy',
@@ -87,32 +88,32 @@ const Features: React.FC = () => {
   ];
 
   useEffect(() => {
+    let timeoutId: number;
+
     const handleScroll = () => {
       if (!containerRef.current || isScrolling.current) return;
 
-      requestAnimationFrame(() => {
+      // Debounce scroll handler for better performance
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
         if (!containerRef.current) return;
 
         const rect = containerRef.current.getBoundingClientRect();
         const containerTop = rect.top;
         const viewportHeight = window.innerHeight;
 
-        // Calculate scroll progress when container is sticky (top = 0)
         if (containerTop <= 0) {
-          // Get the parent section to calculate total scroll distance
           const section = containerRef.current.closest('section');
           if (section) {
             const sectionRect = section.getBoundingClientRect();
             const sectionTop = sectionRect.top;
             const totalScrollDistance = (sectionsData.length - 1) * viewportHeight;
             
-            // Calculate progress based on how much we've scrolled into the section
             const scrolledIntoSection = Math.abs(sectionTop);
             const progress = Math.min(Math.max(scrolledIntoSection / totalScrollDistance, 0), 1);
             
             setScrollProgress(progress);
 
-            // Calculate which sections should be visible based on scroll progress
             const totalSections = sectionsData.length;
             const sectionsToShow = Math.floor(progress * totalSections);
             const newVisibleSections: number[] = [];
@@ -124,18 +125,18 @@ const Features: React.FC = () => {
             setVisibleSections(newVisibleSections);
           }
         } else {
-          // Reset when not in sticky mode
           setScrollProgress(0);
           setVisibleSections([]);
         }
-      });
+      }, 16); // ~60fps
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial call
+    handleScroll();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.clearTimeout(timeoutId);
     };
   }, [sectionsData.length]);
 
@@ -144,13 +145,10 @@ const Features: React.FC = () => {
     const sectionProgress = Math.max(0, (scrollProgress * sectionsData.length * 1.2) - index);
     const animationProgress = Math.min(sectionProgress, 1);
     
-    // Calculate animation values
     const opacity = isVisible ? animationProgress : 0;
     const translateY = isVisible ? (1 - animationProgress) * 60 : 60;
     const scale = isVisible ? 0.9 + (animationProgress * 0.1) : 0.9;
-    
-    // Stagger delay for smooth sequential animation
-    const delay = index * 200; // 200ms delay between sections
+    const delay = index * 200;
 
     return (
       <div
@@ -186,6 +184,7 @@ const Features: React.FC = () => {
             overflow: 'hidden',
           }}
         >
+          {/* Background blur elements */}
           <div
             className="bg-blur-r"
             style={{
@@ -202,7 +201,7 @@ const Features: React.FC = () => {
               zIndex: 1,
               transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
             }}
-          ></div>
+          />
           <div
             className="bg-blur-b"
             style={{
@@ -219,18 +218,12 @@ const Features: React.FC = () => {
               zIndex: 1,
               transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
             }}
-          ></div>
+          />
 
-          {/* Large Icon in Background */}
+          {/* Large Icon */}
           <div
             className="large-icon-bg"
             style={{
-              outline: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              flexShrink: 0,
-              transform: 'none',
               position: 'absolute',
               width: '100%',
               height: '100%',
@@ -244,10 +237,12 @@ const Features: React.FC = () => {
                 ? (section.contentPosition === 'left' ? '5%' : '0')
                 : (section.contentPosition === 'right' ? '5%' : '0'),
               zIndex: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
             }}
           >
             <div 
-              className="w-32 h-32 md:w-96 md:h-96 lg:w-[600px] lg:h-[600px]"
               style={{ 
                 opacity: 0.4 * animationProgress,
                 transform: `scale(${0.8 + (animationProgress * 0.2)})`,
@@ -255,20 +250,19 @@ const Features: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                width: isMobile ? '128px' : '384px',
+                height: isMobile ? '128px' : '384px',
               }}
             >
-              <div className="w-full h-full flex items-center justify-center text-white">
-                {React.cloneElement(section.largeIcon as React.ReactElement, {
-                  className: "w-full h-full"
-                })}
-              </div>
+              {React.cloneElement(section.largeIcon as React.ReactElement, {
+                className: "w-full h-full"
+              })}
             </div>
           </div>
         </div>
 
         {/* Content */}
         <div
-          className="content"
           style={{
             position: 'relative',
             zIndex: 10,
@@ -283,7 +277,6 @@ const Features: React.FC = () => {
           }}
         >
           <div
-            className="content-inner"
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -309,13 +302,10 @@ const Features: React.FC = () => {
           >
             {/* Small Icon */}
             <div
-              className="small-icon"
               style={{
-                outline: 'none',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                flexShrink: 0,
                 opacity: animationProgress,
                 transform: `translateY(${(1 - animationProgress) * 20}px)`,
                 marginBottom: '1.5rem',
@@ -328,21 +318,19 @@ const Features: React.FC = () => {
             </div>
 
             {/* Text Content */}
-            <div className="text-content">
+            <div>
               <div
                 style={{
-                  outline: 'none',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-start',
-                  flexShrink: 0,
                   opacity: animationProgress,
                   transform: `translateY(${(1 - animationProgress) * 30}px)`,
                   transition: `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
                 }}
               >
                 <h2
-                  className="text-xl md:text-2xl lg:text-4xl font-semibold text-white mb-4"
+                  className="text-xl md:text-2xl lg:text-4xl font-semibold mb-4"
                   style={{
                     textAlign: isMobile 
                       ? (section.contentPosition === 'left' ? 'right' : 'left')
@@ -379,10 +367,8 @@ const Features: React.FC = () => {
 
   return (
     <section id="features" className="relative">
-      {/* Features Container with Sticky Behavior */}
       <div
         ref={containerRef}
-        className="features-sections-container"
         style={{
           position: 'sticky',
           top: 0,
@@ -390,7 +376,6 @@ const Features: React.FC = () => {
           overflow: 'hidden',
         }}
       >
-        {/* Features Title */}
         <div className="absolute top-15 left-0 right-0 text-center z-50">
           <h1 className="md:text-6xl text-3xl font-sans font-semibold tracking-tight text-white mb-4">
             Features
@@ -400,7 +385,6 @@ const Features: React.FC = () => {
         {sectionsData.map((section, index) => renderSection(section, index))}
       </div>
       
-      {/* Spacer to create scroll distance for all sections */}
       <div style={{ height: `${(sectionsData.length - 1) * 100}vh` }} />
     </section>
   );
