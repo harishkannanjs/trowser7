@@ -40,7 +40,8 @@ const Features = () => {
   const isMobile = windowWidth < 768;
 
   // Common gradient values
-   const gradientSecondary = 'radial-gradient(100% 100% at 0% 0%, rgb(255, 255, 255) 0%, rgb(235, 235, 244) 100%)';
+  const gradientPrimary = 'linear-gradient(315deg, rgb(140, 140, 217) 5%, rgb(235, 71, 96) 95%)';
+  const gradientSecondary = 'radial-gradient(100% 100% at 0% 0%, rgb(255, 255, 255) 0%, rgb(235, 235, 244) 100%)';
 
   // Data for each section
   const sectionsData = [
@@ -101,7 +102,7 @@ const Features = () => {
         const containerTop = rect.top;
         const viewportHeight = window.innerHeight;
 
-        if (containerTop <= 0) {
+        if (containerTop <= viewportHeight * 0.5) {
           const section = containerRef.current.closest('section');
           if (section) {
             const sectionRect = section.getBoundingClientRect();
@@ -115,9 +116,9 @@ const Features = () => {
 
             const totalSections = sectionsData.length;
             const sectionsToShow = Math.floor(progress * totalSections);
-            const newVisibleSections: number[] = [];
+            const newVisibleSections: number[] = [0]; // Always show first slide
             
-            for (let i = 0; i <= Math.min(sectionsToShow, totalSections - 1); i++) {
+            for (let i = 1; i <= Math.min(sectionsToShow, totalSections - 1); i++) {
               newVisibleSections.push(i);
             }
             
@@ -125,7 +126,7 @@ const Features = () => {
           }
         } else {
           setScrollProgress(0);
-          setVisibleSections([]);
+          setVisibleSections([0]); // Always show first slide
         }
       }, 16); // ~60fps
     };
@@ -144,10 +145,11 @@ const Features = () => {
     const sectionProgress = Math.max(0, (scrollProgress * sectionsData.length * 1.2) - index);
     const animationProgress = Math.min(sectionProgress, 1);
     
-    const opacity = isVisible ? animationProgress : 0;
-    const translateY = isVisible ? (1 - animationProgress) * 60 : 60;
-    const scale = isVisible ? 0.9 + (animationProgress * 0.1) : 0.9;
-    const delay = index * 200;
+    // First slide should always be visible
+    const opacity = index === 0 ? 1 : (isVisible ? animationProgress : 0);
+    const translateY = index === 0 ? 0 : (isVisible ? (1 - animationProgress) * 60 : 60);
+    const scale = index === 0 ? 1 : (isVisible ? 0.9 + (animationProgress * 0.1) : 0.9);
+    const delay = index === 0 ? 0 : index * 200;
 
     return (
       <div
@@ -167,7 +169,7 @@ const Features = () => {
           opacity,
           transform: `translateY(${translateY}px) scale(${scale})`,
           zIndex: 10 + index,
-          transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
+          transition: index === 0 ? 'none' : `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
           willChange: 'transform, opacity',
         }}
       >
@@ -193,12 +195,12 @@ const Features = () => {
               height: '60%',
               borderRadius: '50%',
               filter: 'blur(100px)',
-              opacity: 0.3 * animationProgress,
+              opacity: index === 0 ? 0.3 : 0.3 * animationProgress,
               right: section.contentPosition === 'left' ? '-10%' : 'auto',
               left: section.contentPosition === 'right' ? '-10%' : 'auto',
               top: '5%',
               zIndex: 1,
-              transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
+              transition: index === 0 ? 'none' : `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
             }}
           />
           <div
@@ -210,103 +212,75 @@ const Features = () => {
               height: '70%',
               borderRadius: '50%',
               filter: 'blur(120px)',
-              opacity: 0.3 * animationProgress,
+              opacity: index === 0 ? 0.3 : 0.3 * animationProgress,
               left: section.contentPosition === 'left' ? '-15%' : 'auto',
               right: section.contentPosition === 'right' ? '-15%' : 'auto',
               bottom: '10%',
               zIndex: 1,
-              transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
+              transition: index === 0 ? 'none' : `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
             }}
           />
-
-          {/* Large Icon */}
-          <div
-            className="large-icon-bg"
-            style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              alignItems: isMobile 
-                ? (section.contentPosition === 'left' ? 'flex-start' : 'flex-end')
-                : (section.contentPosition === 'left' ? 'flex-end' : 'flex-start'),
-              paddingRight: isMobile 
-                ? (section.contentPosition === 'left' ? '0' : '5%')
-                : (section.contentPosition === 'left' ? '5%' : '0'),
-              paddingLeft: isMobile 
-                ? (section.contentPosition === 'left' ? '5%' : '0')
-                : (section.contentPosition === 'right' ? '5%' : '0'),
-              zIndex: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <div 
-              style={{ 
-                opacity: 0.4 * animationProgress,
-                transform: `scale(${0.8 + (animationProgress * 0.2)})`,
-                transition: `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: isMobile ? '128px' : '384px',
-                height: isMobile ? '128px' : '384px',
-              }}
-            >
-              {section.largeIcon}
-            </div>
-          </div>
         </div>
 
-        {/* Content */}
+        {/* Main Container Box */}
         <div
           style={{
             position: 'relative',
             zIndex: 10,
             display: 'flex',
-            justifyContent: isMobile 
-              ? (section.contentPosition === 'left' ? 'flex-end' : 'flex-start')
-              : (section.contentPosition === 'left' ? 'flex-start' : 'flex-end'),
             alignItems: 'center',
-            width: '100%',
-            height: '100%',
-            padding: '0 5%',
+            justifyContent: 'space-between',
+            width: isMobile ? '90%' : '80%',
+            maxWidth: '1200px',
+            height: isMobile ? '400px' : '500px',
+            padding: '2rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '20px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+            transform: index === 0 ? 'none' : `translateY(${isVisible ? 0 : 40}px)`,
+            transition: index === 0 ? 'none' : `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 100}ms`,
+            overflow: 'hidden',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '2rem' : '3rem',
           }}
         >
+          {/* Box gradient overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.1) 100%)',
+              borderRadius: '20px',
+              zIndex: -1,
+            }}
+          />
+
+          {/* Content Side */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              alignItems: isMobile 
-                ? (section.contentPosition === 'left' ? 'flex-end' : 'flex-start')
-                : (section.contentPosition === 'left' ? 'flex-start' : 'flex-end'),
-              textAlign: isMobile 
-                ? (section.contentPosition === 'left' ? 'right' : 'left')
-                : (section.contentPosition === 'left' ? 'left' : 'right'),
-              width: isMobile ? '60%' : '50%',
-              maxWidth: '600px',
-              marginLeft: isMobile 
-                ? (section.contentPosition === 'left' ? 'auto' : '0')
-                : (section.contentPosition === 'right' ? 'auto' : '0'),
-              marginRight: isMobile 
-                ? (section.contentPosition === 'left' ? '0' : 'auto')
-                : (section.contentPosition === 'left' ? 'auto' : '0'),
-              transform: `translateY(${isVisible ? 0 : 40}px)`,
-              transition: `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 100}ms`,
-              zIndex: 20,
+              alignItems: isMobile ? 'center' : (section.contentPosition === 'left' ? 'flex-start' : 'flex-end'),
+              textAlign: isMobile ? 'center' : (section.contentPosition === 'left' ? 'left' : 'right'),
+              flex: 1,
+              order: isMobile ? 2 : (section.contentPosition === 'left' ? 1 : 2),
+              opacity: index === 0 ? 1 : animationProgress,
+              transform: index === 0 ? 'none' : `translateY(${(1 - animationProgress) * 30}px)`,
+              transition: index === 0 ? 'none' : `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
             }}
           >
             {/* Small Icon */}
             <div
               style={{
                 display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                opacity: animationProgress,
-                transform: `translateY(${(1 - animationProgress) * 20}px)`,
+                justifyContent: isMobile ? 'center' : (section.contentPosition === 'left' ? 'flex-start' : 'flex-end'),
                 marginBottom: '1.5rem',
-                transition: `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
+                opacity: index === 0 ? 1 : animationProgress,
+                transform: index === 0 ? 'none' : `translateY(${(1 - animationProgress) * 20}px)`,
+                transition: index === 0 ? 'none' : `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
               }}
             >
               <div className="p-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 inline-flex">
@@ -316,45 +290,57 @@ const Features = () => {
 
             {/* Text Content */}
             <div>
-              <div
+              <h2
+                className="text-xl md:text-2xl lg:text-3xl font-semibold mb-4"
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-start',
-                  opacity: animationProgress,
-                  transform: `translateY(${(1 - animationProgress) * 30}px)`,
-                  transition: `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
+                  margin: '0 0 1rem 0',
+                  background: section.titleGradient,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                 }}
               >
-                <h2
-                  className="text-xl md:text-2xl lg:text-4xl font-semibold mb-4"
-                  style={{
-                    textAlign: isMobile 
-                      ? (section.contentPosition === 'left' ? 'right' : 'left')
-                      : (section.contentPosition === 'left' ? 'left' : 'right'),
-                    margin: '0 0 1rem 0',
-                    background: section.titleGradient,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  {section.title}
-                </h2>
-                <p
-                  className="text-sm md:text-base text-gray-300 leading-relaxed max-w-md"
-                  style={{
-                    textAlign: isMobile 
-                      ? (section.contentPosition === 'left' ? 'right' : 'left')
-                      : (section.contentPosition === 'left' ? 'left' : 'right'),
-                    opacity: animationProgress,
-                    transform: `translateY(${(1 - animationProgress) * 20}px)`,
-                    transition: `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
-                  }}
-                >
-                  {section.description}
-                </p>
-              </div>
+                {section.title}
+              </h2>
+              <p
+                className="text-sm md:text-base text-gray-300 leading-relaxed"
+                style={{
+                  opacity: index === 0 ? 1 : animationProgress,
+                  transform: index === 0 ? 'none' : `translateY(${(1 - animationProgress) * 20}px)`,
+                  transition: index === 0 ? 'none' : `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
+                  maxWidth: isMobile ? '100%' : '400px',
+                }}
+              >
+                {section.description}
+              </p>
+            </div>
+          </div>
+
+          {/* Icon Side */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: isMobile ? 0 : 1,
+              order: isMobile ? 1 : (section.contentPosition === 'left' ? 2 : 1),
+              opacity: index === 0 ? 0.4 : 0.4 * animationProgress,
+              transform: index === 0 ? 'none' : `scale(${0.8 + (animationProgress * 0.2)})`,
+              transition: index === 0 ? 'none' : `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
+            }}
+          >
+            <div 
+              style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: isMobile ? '96px' : '256px',
+                height: isMobile ? '96px' : '256px',
+              }}
+            >
+              {React.cloneElement(section.largeIcon, {
+                className: isMobile ? 'w-24 h-24 text-white' : 'w-64 h-64 text-white'
+              })}
             </div>
           </div>
         </div>
