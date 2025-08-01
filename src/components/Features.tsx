@@ -7,7 +7,7 @@ import { Shield, Brain, Palette, Zap } from 'lucide-react';
 const useWindowSize = () => {
   const [windowSize, setWindowSize] = useState({
     width: 1024, // Default values
-    height: 768,
+    height: 850,
   });
 
   useEffect(() => {
@@ -157,7 +157,7 @@ const Features = () => {
         className="feature-section-overlay"
         style={{
           position: 'absolute',
-          top: 0,
+          top: 80,
           left: 0,
           width: '100%',
           height: '100vh',
@@ -230,10 +230,10 @@ const Features = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            width: isMobile ? '90%' : '80%',
+            width: isMobile ? '90%' : '75%',
             maxWidth: '1200px',
-            height: isMobile ? '400px' : '500px',
-            padding: '2rem',
+            height: isMobile ? '390px' : '480px',
+            padding: '1.5rem',
             backgroundColor: 'rgba(255, 255, 255, 0.05)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -243,7 +243,7 @@ const Features = () => {
             transition: index === 0 ? 'none' : `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 100}ms`,
             overflow: 'hidden',
             flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? '2rem' : '3rem',
+            gap: isMobile ? '1.5rem' : '2.5rem',
           }}
         >
           {/* Box gradient overlay */}
@@ -334,12 +334,12 @@ const Features = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: isMobile ? '96px' : '256px',
-                height: isMobile ? '96px' : '256px',
+                width: isMobile ? '80px' : '200px',
+                height: isMobile ? '80px' : '200px',
               }}
             >
               {React.cloneElement(section.largeIcon, {
-                className: isMobile ? 'w-24 h-24 text-white' : 'w-64 h-64 text-white'
+                className: isMobile ? 'w-20 h-20 text-white' : 'w-50 h-50 text-white'
               })}
             </div>
           </div>
@@ -359,8 +359,8 @@ const Features = () => {
           overflow: 'hidden',
         }}
       >
-        <div className="absolute top-15 left-0 right-0 text-center z-50">
-          <h1 className="md:text-6xl text-3xl font-sans font-semibold tracking-tight text-white mb-4">
+        <div className="absolute top-20 left-0 right-0 text-center z-50">
+          <h1 className="md:text-6xl text-3xl font-sans font-semibold tracking-tight text-white mt-10 mb-24 md:mb-32">
             Features
           </h1>
         </div>

@@ -48,20 +48,23 @@ const Reviews = () => {
   return (
     <section className="py-20 bg-black">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+        <div className="text-center mb-8">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mt-8 mb-4">
             Hear from Our Developers
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto mt-8mb-6">
             The future of browsing, built by those who dream beyond the tab.
-          </p>
-          <p className="text-sm text-gray-500 mt-4 italic">
-            *These early insights come straight from the creators behind Trowser. User reviews will be published following the public launch.
           </p>
         </div>
 
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto mt-1 mb-6">
           <Carousel3D cards={developerCards} autoRotate={true} />
+        </div>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-500 italic">
+            *These early insights come straight from the creators behind Trowser. User reviews will be published following the public launch.
+          </p>
         </div>
       </div>
     </section>
