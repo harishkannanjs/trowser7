@@ -40,7 +40,6 @@ const Features = () => {
   const isMobile = windowWidth < 768;
 
   // Common gradient values
-  const gradientPrimary = 'linear-gradient(315deg, rgb(140, 140, 217) 5%, rgb(235, 71, 96) 95%)';
   const gradientSecondary = 'radial-gradient(100% 100% at 0% 0%, rgb(255, 255, 255) 0%, rgb(235, 235, 244) 100%)';
 
   // Data for each section
