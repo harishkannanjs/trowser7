@@ -3,7 +3,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Shield, Brain, Palette, Zap } from 'lucide-react';
-import { GlowingCard } from '@/components/ui/glowing-card';
 
 // Improved window size hook with better SSR handling
 const useWindowSize = () => {
@@ -230,11 +229,9 @@ const Features = () => {
           />
         </div>
 
-        {/* Main Container Box with Glowing Effect */}
-        <GlowingCard
-          glowColor="#8c8cd9"
-          hoverEffect={true}
-          className="p-0 border-0 bg-transparent"
+        {/* Main Container Box */}
+        <div
+          className="p-0 border-0 bg-transparent transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer"
           style={{
             position: 'relative',
             zIndex: 10,
@@ -352,7 +349,7 @@ const Features = () => {
               })}
             </div>
           </div>
-        </GlowingCard>
+        </div>
       </div>
     );
   };

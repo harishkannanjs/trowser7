@@ -2,7 +2,6 @@
 
 import React from "react";
 import Carousel3D, { CarouselCard } from "@/components/ui/carousel-3d";
-import { GlowingCards, GlowingCard } from "@/components/ui/glowing-card";
 import {
   Zap,
   Shield,
