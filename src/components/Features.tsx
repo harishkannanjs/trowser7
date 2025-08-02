@@ -1,7 +1,9 @@
+
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Shield, Brain, Palette, Zap } from 'lucide-react';
+import { GlowingCard } from '@/components/ui/glowing-card';
 
 // Improved window size hook with better SSR handling
 const useWindowSize = () => {
@@ -32,10 +34,10 @@ const useWindowSize = () => {
 };
 
 const Features = () => {
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [visibleSections, setVisibleSections] = useState<number[]>([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isScrolling = useRef(false);
+  const lastScrollTimeRef = useRef(0);
   const { width: windowWidth } = useWindowSize();
   const isMobile = windowWidth < 768;
 
@@ -87,47 +89,40 @@ const Features = () => {
   ];
 
   useEffect(() => {
-    let timeoutId: number;
-
     const handleScroll = () => {
-      if (!containerRef.current || isScrolling.current) return;
+      if (!containerRef.current || isTransitioning) return;
 
-      // Debounce scroll handler for better performance
-      window.clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
-        if (!containerRef.current) return;
+      const now = Date.now();
+      if (now - lastScrollTimeRef.current < 100) return; // Throttle scroll events
+      lastScrollTimeRef.current = now;
 
-        const rect = containerRef.current.getBoundingClientRect();
-        const containerTop = rect.top;
-        const viewportHeight = window.innerHeight;
+      const rect = containerRef.current.getBoundingClientRect();
+      const containerTop = rect.top;
+      const viewportHeight = window.innerHeight;
 
-        if (containerTop <= viewportHeight * 0.5) {
-          const section = containerRef.current.closest('section');
-          if (section) {
-            const sectionRect = section.getBoundingClientRect();
-            const sectionTop = sectionRect.top;
-            const totalScrollDistance = (sectionsData.length - 1) * viewportHeight;
+      // Check if features section is in view
+      if (containerTop <= viewportHeight * 0.5 && containerTop >= -viewportHeight * 0.5) {
+        const section = containerRef.current.closest('section');
+        if (section) {
+          const sectionRect = section.getBoundingClientRect();
+          const sectionTop = sectionRect.top;
+          
+          // Calculate which slide should be active based on scroll position
+          const scrolledIntoSection = Math.abs(sectionTop);
+          const slideHeight = viewportHeight;
+          const newSlide = Math.min(Math.floor(scrolledIntoSection / slideHeight), sectionsData.length - 1);
+          
+          if (newSlide !== currentSlide && newSlide >= 0) {
+            setIsTransitioning(true);
+            setCurrentSlide(newSlide);
             
-            const scrolledIntoSection = Math.abs(sectionTop);
-            const progress = Math.min(Math.max(scrolledIntoSection / totalScrollDistance, 0), 1);
-            
-            setScrollProgress(progress);
-
-            const totalSections = sectionsData.length;
-            const sectionsToShow = Math.floor(progress * totalSections);
-            const newVisibleSections: number[] = [0]; // Always show first slide
-            
-            for (let i = 1; i <= Math.min(sectionsToShow, totalSections - 1); i++) {
-              newVisibleSections.push(i);
-            }
-            
-            setVisibleSections(newVisibleSections);
+            // Clear transition state after animation completes
+            setTimeout(() => {
+              setIsTransitioning(false);
+            }, 800);
           }
-        } else {
-          setScrollProgress(0);
-          setVisibleSections([0]); // Always show first slide
         }
-      }, 16); // ~60fps
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -135,20 +130,34 @@ const Features = () => {
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.clearTimeout(timeoutId);
     };
-  }, [sectionsData.length]);
+  }, [currentSlide, isTransitioning, sectionsData.length]);
 
   const renderSection = (section: typeof sectionsData[0], index: number) => {
-    const isVisible = visibleSections.includes(index);
-    const sectionProgress = Math.max(0, (scrollProgress * sectionsData.length * 1.2) - index);
-    const animationProgress = Math.min(sectionProgress, 1);
+    const isActive = index === currentSlide;
+    const isVisible = index <= currentSlide;
     
-    // First slide should always be visible
-    const opacity = index === 0 ? 1 : (isVisible ? animationProgress : 0);
-    const translateY = index === 0 ? 0 : (isVisible ? (1 - animationProgress) * 60 : 60);
-    const scale = index === 0 ? 1 : (isVisible ? 0.9 + (animationProgress * 0.1) : 0.9);
-    const delay = index === 0 ? 0 : index * 200;
+    // Animation states
+    let opacity = 0;
+    let translateY = 100;
+    let scale = 0.9;
+    
+    if (index === 0) {
+      // First slide is always visible
+      opacity = 1;
+      translateY = 0;
+      scale = 1;
+    } else if (isActive) {
+      // Current active slide
+      opacity = 1;
+      translateY = 0;
+      scale = 1;
+    } else if (isVisible && index < currentSlide) {
+      // Previous slides (visible but inactive)
+      opacity = 0.3;
+      translateY = -20;
+      scale = 0.95;
+    }
 
     return (
       <div
@@ -156,7 +165,7 @@ const Features = () => {
         className="feature-section-overlay"
         style={{
           position: 'absolute',
-          top: 80,
+          top: 120,
           left: 0,
           width: '100%',
           height: '100vh',
@@ -168,7 +177,7 @@ const Features = () => {
           opacity,
           transform: `translateY(${translateY}px) scale(${scale})`,
           zIndex: 10 + index,
-          transition: index === 0 ? 'none' : `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
+          transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
           willChange: 'transform, opacity',
         }}
       >
@@ -194,12 +203,12 @@ const Features = () => {
               height: '60%',
               borderRadius: '50%',
               filter: 'blur(100px)',
-              opacity: index === 0 ? 0.3 : 0.3 * animationProgress,
+              opacity: 0.3,
               right: section.contentPosition === 'left' ? '-10%' : 'auto',
               left: section.contentPosition === 'right' ? '-10%' : 'auto',
               top: '5%',
               zIndex: 1,
-              transition: index === 0 ? 'none' : `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
+              transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
           <div
@@ -211,18 +220,21 @@ const Features = () => {
               height: '70%',
               borderRadius: '50%',
               filter: 'blur(120px)',
-              opacity: index === 0 ? 0.3 : 0.3 * animationProgress,
+              opacity: 0.3,
               left: section.contentPosition === 'left' ? '-15%' : 'auto',
               right: section.contentPosition === 'right' ? '-15%' : 'auto',
               bottom: '10%',
               zIndex: 1,
-              transition: index === 0 ? 'none' : `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
+              transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           />
         </div>
 
-        {/* Main Container Box */}
-        <div
+        {/* Main Container Box with Glowing Effect */}
+        <GlowingCard
+          glowColor="#8c8cd9"
+          hoverEffect={true}
+          className="p-0 border-0 bg-transparent"
           style={{
             position: 'relative',
             zIndex: 10,
@@ -238,8 +250,6 @@ const Features = () => {
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: '20px',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-            transform: index === 0 ? 'none' : `translateY(${isVisible ? 0 : 40}px)`,
-            transition: index === 0 ? 'none' : `transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 100}ms`,
             overflow: 'hidden',
             flexDirection: isMobile ? 'column' : 'row',
             gap: isMobile ? '1.5rem' : '2.5rem',
@@ -266,9 +276,6 @@ const Features = () => {
               textAlign: isMobile ? 'center' : (section.contentPosition === 'left' ? 'left' : 'right'),
               flex: 1,
               order: isMobile ? 2 : (section.contentPosition === 'left' ? 1 : 2),
-              opacity: index === 0 ? 1 : animationProgress,
-              transform: index === 0 ? 'none' : `translateY(${(1 - animationProgress) * 30}px)`,
-              transition: index === 0 ? 'none' : `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
             }}
           >
             {/* Small Icon */}
@@ -277,9 +284,9 @@ const Features = () => {
                 display: 'flex',
                 justifyContent: isMobile ? 'center' : (section.contentPosition === 'left' ? 'flex-start' : 'flex-end'),
                 marginBottom: '1.5rem',
-                opacity: index === 0 ? 1 : animationProgress,
-                transform: index === 0 ? 'none' : `translateY(${(1 - animationProgress) * 20}px)`,
-                transition: index === 0 ? 'none' : `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
+                opacity: isActive ? 1 : 0,
+                transform: isActive ? 'translateY(0px)' : 'translateY(20px)',
+                transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) 200ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 200ms',
               }}
             >
               <div className="p-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 inline-flex">
@@ -297,6 +304,9 @@ const Features = () => {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
+                  opacity: isActive ? 1 : 0,
+                  transform: isActive ? 'translateY(0px)' : 'translateY(20px)',
+                  transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) 300ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 300ms',
                 }}
               >
                 {section.title}
@@ -304,10 +314,10 @@ const Features = () => {
               <p
                 className="text-sm md:text-base text-gray-300 leading-relaxed"
                 style={{
-                  opacity: index === 0 ? 1 : animationProgress,
-                  transform: index === 0 ? 'none' : `translateY(${(1 - animationProgress) * 20}px)`,
-                  transition: index === 0 ? 'none' : `opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
-                  maxWidth: isMobile ? '100%' : '400px',
+                  opacity: isActive ? 1 : 0,
+                  transform: isActive ? 'translateY(0px)' : 'translateY(20px)',
+                  transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) 400ms, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 400ms',
+                  maxWidth: isMobile ? '100%' : '440px',
                 }}
               >
                 {section.description}
@@ -323,9 +333,9 @@ const Features = () => {
               justifyContent: 'center',
               flex: isMobile ? 0 : 1,
               order: isMobile ? 1 : (section.contentPosition === 'left' ? 2 : 1),
-              opacity: index === 0 ? 0.4 : 0.4 * animationProgress,
-              transform: index === 0 ? 'none' : `scale(${0.8 + (animationProgress * 0.2)})`,
-              transition: index === 0 ? 'none' : `opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
+              opacity: isActive ? 0.4 : 0,
+              transform: isActive ? 'scale(1)' : 'scale(0.8)',
+              transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1) 400ms, transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) 400ms',
             }}
           >
             <div 
@@ -342,7 +352,7 @@ const Features = () => {
               })}
             </div>
           </div>
-        </div>
+        </GlowingCard>
       </div>
     );
   };
@@ -359,7 +369,7 @@ const Features = () => {
         }}
       >
         <div className="absolute top-20 left-0 right-0 text-center z-50">
-          <h1 className="md:text-6xl text-3xl font-sans font-semibold tracking-tight text-white mt-10 mb-24 md:mb-32">
+          <h1 className="bg-clip-text text-transparent text-center bg-gradient-to-b from-neutral-600 to-white text-4xl md:text-7xl font-sans relative z-20 font-bold tracking-tight mt-10 mb-34 md:mb-32">
             Features
           </h1>
         </div>

@@ -2,6 +2,7 @@
 
 import React from "react";
 import Carousel3D, { CarouselCard } from "@/components/ui/carousel-3d";
+import { GlowingCards, GlowingCard } from "@/components/ui/glowing-card";
 import {
   Zap,
   Shield,
@@ -49,7 +50,7 @@ const Reviews = () => {
     <section className="py-20 bg-black">
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mt-8 mb-4">
+          <h2 className="bg-clip-text text-transparent text-center bg-gradient-to-b from-neutral-600 to-white text-4xl md:text-7xl font-sans relative z-20 font-bold tracking-tight mt-8 mb-4">
             Hear from Our Developers
           </h2>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto mt-8mb-6">
